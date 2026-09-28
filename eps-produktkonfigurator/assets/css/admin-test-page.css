@@ -1,0 +1,188 @@
+/*
+ * Styles für die temporäre Admin-Testseite (EPS_Admin_Test_Page).
+ * Wird zusammen mit der Testseite entfernt, sobald die echte UI existiert.
+ */
+
+.eps-range-field {
+	display: inline-block;
+	vertical-align: top;
+	min-width: 220px;
+	margin: 0 32px 16px 0;
+}
+
+/* Ohne diese Regel würde die eigene "display: inline-block"-Vorgabe oben
+   das native [hidden]-Verhalten des Browsers überschreiben (Autoren-Regeln
+   schlagen UA-Standardregeln unabhängig von der Spezifität) - JS setzt
+   .hidden bei einem Gerätetyp-Wechsel, um Filter auszublenden, die laut
+   Registry (applies_to) nicht zutreffen. */
+.eps-range-field[hidden] {
+	display: none;
+}
+
+.eps-range-toggle-label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 600;
+	margin-bottom: 6px;
+	cursor: pointer;
+}
+
+.eps-range-toggle-label input[type="checkbox"] {
+	margin: 0;
+}
+
+.eps-range-slider {
+	position: relative;
+	height: 28px;
+}
+
+.eps-range-slider.is-inactive {
+	opacity: 0.35;
+}
+
+.eps-range-slider.is-inactive .eps-range-input {
+	pointer-events: none;
+}
+
+.eps-range-track,
+.eps-range-progress {
+	position: absolute;
+	top: 50%;
+	height: 4px;
+	transform: translateY( -50% );
+	border-radius: 2px;
+	pointer-events: none;
+}
+
+.eps-range-track {
+	left: 0;
+	right: 0;
+	background: #dcdcde;
+}
+
+.eps-range-progress {
+	background: #2271b1;
+}
+
+.eps-range-input {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 28px;
+	margin: 0;
+	background: transparent;
+	-webkit-appearance: none;
+	appearance: none;
+	pointer-events: none;
+}
+
+.eps-range-input::-webkit-slider-runnable-track {
+	-webkit-appearance: none;
+	background: transparent;
+	height: 28px;
+}
+
+.eps-range-input::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	pointer-events: auto;
+	width: 16px;
+	height: 16px;
+	margin-top: 6px;
+	border-radius: 50%;
+	background: #2271b1;
+	border: 2px solid #fff;
+	box-shadow: 0 0 0 1px #2271b1;
+	cursor: pointer;
+}
+
+.eps-range-input::-moz-range-track {
+	background: transparent;
+	height: 28px;
+	border: none;
+}
+
+.eps-range-input::-moz-range-thumb {
+	pointer-events: auto;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: #2271b1;
+	border: 2px solid #fff;
+	box-shadow: 0 0 0 1px #2271b1;
+	cursor: pointer;
+}
+
+.eps-range-values {
+	margin-top: 6px;
+	font-size: 12px;
+	color: #50575e;
+}
+
+.eps-range-no-devices {
+	margin: 4px 0 0;
+	font-size: 12px;
+	color: #d63638;
+}
+
+.eps-dropdown-field,
+.eps-boolean-field,
+.eps-text-field {
+	display: inline-block;
+	vertical-align: top;
+	min-width: 220px;
+	margin: 0 32px 16px 0;
+}
+
+/* Siehe Begründung bei .eps-range-field[hidden] weiter oben - gilt hier
+   aus demselben Grund. */
+.eps-dropdown-field[hidden],
+.eps-boolean-field[hidden],
+.eps-text-field[hidden] {
+	display: none;
+}
+
+.eps-text-field label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.eps-text-field-names {
+	margin: 4px 0 0;
+	font-size: 12px;
+	color: #50575e;
+}
+
+.eps-text-field-unknown {
+	margin: 4px 0 0;
+	font-size: 12px;
+	color: #d63638;
+}
+
+.eps-dropdown-field label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.eps-boolean-field label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.eps-boolean-field input[type="checkbox"] {
+	margin: 0;
+}
+
+.eps-boolean-field input[type="checkbox"]:disabled {
+	cursor: not-allowed;
+}
+
+.eps-dropdown-field select option:disabled {
+	color: #a7aaad;
+}

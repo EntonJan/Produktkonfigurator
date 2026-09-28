@@ -1,0 +1,19 @@
+# Betriebssystem
+.DS_Store
+Thumbs.db
+
+# Editoren/IDEs
+.vscode/
+.idea/
+*.swp
+
+# Abhängigkeiten (falls später Composer/npm dazukommen)
+vendor/
+node_modules/
+
+# Umgebungsvariablen/Secrets
+.env
+.env.local
+
+# Logs
+*.log
