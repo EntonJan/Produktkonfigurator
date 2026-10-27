@@ -82,6 +82,13 @@ test( 'AC-Festspannung muss passen', () => {
 	assert.ok( ! inv.some( ( x ) => x.device.sku.startsWith( '6000' ) ), 'CSI 230 V passt nicht zu 400 V' );
 } );
 
+test( 'Angegebene Leistung gilt (Autoranging)', () => {
+	assert.equal( QS.powerNeeded( QS.parseQuery( '60V 1000A 30kW' ) ), 30000 );
+	const r = QS.search( devices, 'Stromquelle 60V 1000A 30kW' );
+	assert.equal( r[ 0 ].category, 'exact' );
+	assert.ok( [ '200904', '200360', '202200', '200300', '202250' ].includes( r[ 0 ].device.sku ) );
+} );
+
 test( 'Kundenmodus: keine internen Kategorien', () => {
 	const r = QS.search( devices, 'Stromquelle 0-30V 1kA 30kW', { internal: false } );
 	assert.ok( r.every( ( x ) => [ 'exact', 'larger', 'system' ].includes( x.category ) ) );

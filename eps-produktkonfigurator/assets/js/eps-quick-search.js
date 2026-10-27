@@ -117,13 +117,16 @@
 		return q;
 	}
 
-	/** Bedarf an Leistung: angegeben oder U × I – der größere Wert. */
+	/**
+	 * Bedarf an Leistung: die angegebene Leistung; nur ohne Angabe U × I.
+	 * Liegt die Angabe unter U × I, ist ein Autoranging-Gerät gemeint
+	 * (z. B. 60 V / 1000 A / 30 kW) – U_max und I_max nicht gleichzeitig.
+	 */
 	function powerNeeded( q ) {
-		var vi = ( q.voltage && q.current ) ? q.voltage * q.current : null;
-		if ( q.power && vi ) {
-			return Math.max( q.power, vi );
+		if ( q.power ) {
+			return q.power;
 		}
-		return q.power || vi || null;
+		return ( q.voltage && q.current ) ? q.voltage * q.current : null;
 	}
 
 	function isEmpty( q ) {

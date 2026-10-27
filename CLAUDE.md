@@ -48,7 +48,7 @@ Tests: `node --test tests/*.test.js`). Bewertung: exact (≤ Wunsch +20 %,
 gleiche Obergrenze wie die Filter), larger, parallel/series (nur wenn laut
 Daten möglich), slightly_below (−10 %, nur intern). Im Kundenmodus
 (`internal: false`) werden parallel/series zu „system“ (auf Anfrage),
-„slightly_below“ entfällt. U × I zählt als Leistungsbedarf; AC-Festspannungen
+„slightly_below“ entfällt. Leistungsbedarf = angegebene Leistung, nur ohne Angabe U × I (Autoranging); AC-Festspannungen
 müssen ±10 % passen. „In Filter übernehmen“ setzt Gerätetyp + Regler
 (Spannung cover = U, Strom/Leistung within [Wunsch, Obergrenze]) nur auf
 ausdrücklichen Klick.
