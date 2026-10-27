@@ -90,6 +90,7 @@ function eps_produktkonfigurator_init() {
 	require_once EPS_PRODUKTKONFIGURATOR_PLUGIN_DIR . 'includes/class-eps-device.php';
 	require_once EPS_PRODUKTKONFIGURATOR_PLUGIN_DIR . 'includes/class-eps-filter.php';
 	require_once EPS_PRODUKTKONFIGURATOR_PLUGIN_DIR . 'includes/mock-devices.php';
+	require_once EPS_PRODUKTKONFIGURATOR_PLUGIN_DIR . 'includes/shop-devices.php';
 
 	// TEMPORÄR: Admin-Testseite zur Überprüfung der Mock-Geräte, wird später entfernt.
 	if ( is_admin() ) {

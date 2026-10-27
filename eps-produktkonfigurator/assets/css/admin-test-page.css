@@ -186,3 +186,18 @@
 .eps-dropdown-field select option:disabled {
 	color: #a7aaad;
 }
+
+/* Schnellsuche */
+.eps-quick-search { background: #fff; border: 1px solid #c3c4c7; border-left: 4px solid #35528c; padding: 4px 16px 12px; margin: 16px 0 24px; }
+.eps-quick-search .eps-qs-input { font-size: 16px; width: 32em; max-width: 100%; }
+.eps-quick-search .eps-qs-option { margin: 0 12px; }
+.eps-qs-recognized { color: #50575e; }
+.eps-qs-results td { vertical-align: top; }
+.eps-qs-results tr.eps-qs-exact td:first-child { color: #1a7f37; font-weight: 600; }
+.eps-qs-results tr.eps-qs-larger td:first-child { color: #1b4f72; font-weight: 600; }
+.eps-qs-results tr.eps-qs-parallel td:first-child,
+.eps-qs-results tr.eps-qs-series td:first-child,
+.eps-qs-results tr.eps-qs-system td:first-child { color: #8e5a00; font-weight: 600; }
+.eps-qs-results tr.eps-qs-slightly_below td { color: #8a8f98; }
+.eps-qs-results td:first-child,
+.eps-qs-results td:nth-child(8) { white-space: nowrap; }

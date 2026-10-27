@@ -192,7 +192,7 @@
 	// Effekte (ein Feld beeinflusst nie seine eigenen Grenzen/Optionen).
 	function filterDevicesExcluding( excludeKey ) {
 		var selectedType = getSelectedDeviceType();
-		var devices = ( window.epsMockDevices || [] ).filter( function ( device ) {
+		var devices = ( window.epsDevices || [] ).filter( function ( device ) {
 			return device.is_valid;
 		} );
 

@@ -2,7 +2,8 @@
 
 ## Ziel
 WooCommerce-Plugin `eps-produktkonfigurator` für einen Produktkonfigurator.
-Aktuell mit Mock-Daten, später Anbindung an die Weclapp-API. Lokale
+Gerätedaten aktuell aus dem EPS-Onlineshop (`data/shop-devices.json`, erzeugt
+mit `tools/shop-import.py`), später Anbindung an die Weclapp-API. Lokale
 Entwicklung per Docker: `docker compose up -d`, Aufruf über
 `http://localhost:8080`.
 
@@ -23,7 +24,13 @@ Entwicklung per Docker: `docker compose up -d`, Aufruf über
     innerhalb von [von, bis] liegen muss.
 - Nur gültige Geräte (`EPS_Device::is_valid()`) erscheinen in Ergebnissen.
   `NT-9901`, `IND-9902`, `LG-9903` sind bewusst ungültige Testgeräte und
-  bleiben es.
+  bleiben es (strenge Regel P ≈ U × I ±10 %). Shopgeräte (`meta.power_rule =
+  max`) dürfen weniger Leistung haben (Autoranging/Derating), aber nicht mehr
+  als U × I × Kanäle +10 %; Verstöße sind Datenfehler im Shop.
+- Geräte kommen über `eps_get_devices()` (Shopgeräte + die 3 Testgeräte).
+  Zusatzinfos, die keine Registry-Filter sind (AC-Festspannungen,
+  Parallelschaltung, Originaltexte, Datenblatt-Link), liegen in
+  `EPS_Device::$meta`.
 - Regel bei fehlendem Attribut: Trifft ein aktiver, für den Gerätetyp
   zutreffender Filter zu, das Gerät hat aber keinen Wert für dieses
   Attribut, fällt das Gerät aus dem Ergebnis.
@@ -33,6 +40,18 @@ Entwicklung per Docker: `docker compose up -d`, Aufruf über
 - Bereits gewählte Filterwerte werden nie stillschweigend geändert (auch
   wenn sie durch andere Filter ungültig werden) – stattdessen erscheint der
   Hinweis „Keine Geräte für diese Kombination“.
+
+## Schnellsuche
+Freitext wie „Stromquelle 0-30V 1kA 30kW“ → passende Geräte, Logik in
+`assets/js/eps-quick-search.js` (DOM-frei, im Browser und in Node lauffähig,
+Tests: `node --test tests/*.test.js`). Bewertung: exact (≤ Wunsch +20 %,
+gleiche Obergrenze wie die Filter), larger, parallel/series (nur wenn laut
+Daten möglich), slightly_below (−10 %, nur intern). Im Kundenmodus
+(`internal: false`) werden parallel/series zu „system“ (auf Anfrage),
+„slightly_below“ entfällt. U × I zählt als Leistungsbedarf; AC-Festspannungen
+müssen ±10 % passen. „In Filter übernehmen“ setzt Gerätetyp + Regler
+(Spannung cover = U, Strom/Leistung within [Wunsch, Obergrenze]) nur auf
+ausdrücklichen Klick.
 
 ## Optionen-Katalog
 Zentraler Katalog mit durchgehenden Nummern 1 bis 12
@@ -47,5 +66,7 @@ Alle Bezeichnungen (Filter, Optionen, Gerätetypen) existieren als
 
 ## Arbeitsweise
 Änderungen immer im laufenden Docker-Setup testen (nicht nur Syntaxcheck)
-und das Ergebnis berichten. Mock-Daten bleiben klar als Testdaten
-erkennbar (z. B. Testoptionen, offensichtlich ungültige Geräte).
+und das Ergebnis berichten. Testdaten bleiben klar als Testdaten
+erkennbar (z. B. Testoptionen, offensichtlich ungültige Geräte). Shopdaten
+aktualisieren: EPS-Produktsuche starten („Shop neu einlesen“), dann
+`python tools/shop-import.py <…/EPS-Produktsuche-Daten/shopdaten.json>`.

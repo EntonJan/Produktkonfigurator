@@ -203,6 +203,22 @@ function eps_get_filters_config() {
 					'label_de' => 'Schrank/Cabinet',
 					'label_en' => 'Cabinet',
 				),
+				'built_in' => array(
+					'label_de' => 'Einbau',
+					'label_en' => 'Built-in',
+				),
+				'desktop'  => array(
+					'label_de' => 'Tischgerät',
+					'label_en' => 'Desktop',
+				),
+				'tower'    => array(
+					'label_de' => 'Tower',
+					'label_en' => 'Tower',
+				),
+				'din_rail' => array(
+					'label_de' => 'Hutschiene',
+					'label_en' => 'DIN Rail',
+				),
 			),
 		),
 

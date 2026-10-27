@@ -53,6 +53,15 @@ class EPS_Device {
 	public $attributes;
 
 	/**
+	 * @var array Zusatzinfos, die keine Registry-Filter sind (z. B. aus dem
+	 *            Onlineshop): power_rule, channels, ac, u_fixed, u_ranges,
+	 *            parallel, parallel_max, series, texts, pdf_url, shop_url.
+	 *            Wird von der Schnellsuche (assets/js/eps-quick-search.js) und
+	 *            der Validierung genutzt.
+	 */
+	public $meta;
+
+	/**
 	 * Toleranz für den Strom-Leistungs-Konflikt-Check (10 %).
 	 */
 	const POWER_TOLERANCE = 0.10;
@@ -87,6 +96,7 @@ class EPS_Device {
 			'application_tags' => array(),
 			'device_type'      => '',
 			'attributes'       => array(),
+			'meta'             => array(),
 		);
 
 		$args = array_merge( $defaults, $args );
@@ -103,6 +113,7 @@ class EPS_Device {
 		$this->application_tags = (array) $args['application_tags'];
 		$this->device_type      = (string) $args['device_type'];
 		$this->attributes       = (array) $args['attributes'];
+		$this->meta             = (array) $args['meta'];
 	}
 
 	/**
@@ -122,6 +133,20 @@ class EPS_Device {
 	 */
 	public function has_valid_power_current_relation() {
 		$expected_power = $this->current_max * $this->voltage_max;
+
+		// Echte Geräte (Onlineshop): Autoranging-/Derating-Geräte liefern
+		// absichtlich WENIGER als U_max * I_max (z. B. 60 V / 1000 A / 30 kW).
+		// Geprüft wird deshalb nur die Obergrenze: P darf U * I * Kanäle
+		// (mehrkanalige Geräte, 3 Phasen) um höchstens 10 % übersteigen.
+		// Fehlt einer der Werte, ist keine Prüfung möglich -> gültig; die
+		// Filter behandeln fehlende Attribute ohnehin selbst.
+		if ( isset( $this->meta['power_rule'] ) && 'max' === $this->meta['power_rule'] ) {
+			if ( $this->voltage_max <= 0.0 || $this->current_max <= 0.0 || $this->power_max <= 0.0 ) {
+				return true;
+			}
+			$channels = max( 1, (int) ( isset( $this->meta['channels'] ) ? $this->meta['channels'] : 1 ) );
+			return $this->power_max <= $expected_power * $channels * ( 1 + self::POWER_TOLERANCE );
+		}
 
 		if ( 0.0 === $expected_power ) {
 			return 0.0 === $this->power_max;
@@ -159,6 +184,14 @@ class EPS_Device {
 
 		if ( ! $this->has_valid_power_current_relation() ) {
 			$expected_power = $this->current_max * $this->voltage_max;
+			if ( isset( $this->meta['power_rule'] ) && 'max' === $this->meta['power_rule'] ) {
+				$errors[] = sprintf(
+					'power_max (%s W) ist größer als voltage_max * current_max * Kanäle (%s W) – Shopdaten prüfen.',
+					$this->power_max,
+					round( $expected_power * max( 1, (int) $this->meta['channels'] ), 2 )
+				);
+				return $errors;
+			}
 			$errors[]       = sprintf(
 				'power_max (%s W) weicht zu stark von current_max * voltage_max (%s W) ab.',
 				$this->power_max,

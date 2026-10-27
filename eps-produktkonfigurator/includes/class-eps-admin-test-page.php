@@ -76,6 +76,25 @@ class EPS_Admin_Test_Page {
 			file_exists( $css_path ) ? (string) filemtime( $css_path ) : EPS_PRODUKTKONFIGURATOR_VERSION
 		);
 
+		$qs_path    = EPS_PRODUKTKONFIGURATOR_PLUGIN_DIR . 'assets/js/eps-quick-search.js';
+		$qs_ui_path = EPS_PRODUKTKONFIGURATOR_PLUGIN_DIR . 'assets/js/admin-quick-search.js';
+
+		wp_enqueue_script(
+			'eps-quick-search',
+			EPS_PRODUKTKONFIGURATOR_PLUGIN_URL . 'assets/js/eps-quick-search.js',
+			array(),
+			file_exists( $qs_path ) ? (string) filemtime( $qs_path ) : EPS_PRODUKTKONFIGURATOR_VERSION,
+			true
+		);
+
+		wp_enqueue_script(
+			'eps-admin-quick-search',
+			EPS_PRODUKTKONFIGURATOR_PLUGIN_URL . 'assets/js/admin-quick-search.js',
+			array( 'eps-quick-search' ),
+			file_exists( $qs_ui_path ) ? (string) filemtime( $qs_ui_path ) : EPS_PRODUKTKONFIGURATOR_VERSION,
+			true
+		);
+
 		wp_enqueue_script(
 			'eps-admin-test-page',
 			EPS_PRODUKTKONFIGURATOR_PLUGIN_URL . 'assets/js/admin-test-page.js',
@@ -99,25 +118,38 @@ class EPS_Admin_Test_Page {
 		}
 
 		// Geräte-Rohdaten für die live im Browser berechneten Faceted-Search-
-		// Reglergrenzen: Gerätetyp + Registry-Attribute (nicht die
-		// Legacy-Einzelfelder, die JS seit der Registry-Umstellung nicht
-		// mehr braucht).
-		$mock_devices   = function_exists( 'eps_get_mock_devices' ) ? eps_get_mock_devices() : array();
+		// Reglergrenzen und die Schnellsuche: Gerätetyp, Registry-Attribute,
+		// Name und meta (Shop-Zusatzinfos wie AC-Festspannungen,
+		// Parallelschaltung, Originaltexte, Datenblatt-Link).
+		$all_devices    = function_exists( 'eps_get_devices' ) ? eps_get_devices() : array();
 		$devices_for_js = array();
 
-		foreach ( $mock_devices as $device ) {
+		foreach ( $all_devices as $device ) {
 			$devices_for_js[] = array(
 				'sku'         => $device->sku,
+				'name_de'     => $device->name_de,
+				'name_en'     => $device->name_en,
 				'device_type' => $device->device_type,
 				'is_valid'    => $device->is_valid(),
 				'attributes'  => $device->attributes,
+				'meta'        => $device->meta,
 			);
 		}
 
+		$device_type_labels = array();
+		if ( isset( $filters_config['device_type']['options'] ) ) {
+			foreach ( $filters_config['device_type']['options'] as $type_key => $type_option ) {
+				$device_type_labels[ $type_key ] = $type_option['label_de'];
+			}
+		}
+
+		// Daten VOR dem ersten Skript der Kette ausgeben, damit sowohl die
+		// Schnellsuche als auch die Faceted-Search sie vorfinden.
 		wp_add_inline_script(
-			'eps-admin-test-page',
+			'eps-quick-search',
 			'window.epsFiltersConfig = ' . wp_json_encode( $filters_config_js ) . ';' .
-			'window.epsMockDevices = ' . wp_json_encode( $devices_for_js ) . ';',
+			'window.epsDevices = ' . wp_json_encode( $devices_for_js ) . ';' .
+			'window.epsDeviceTypeLabels = ' . wp_json_encode( $device_type_labels ) . ';',
 			'before'
 		);
 	}
@@ -498,7 +530,66 @@ class EPS_Admin_Test_Page {
 	}
 
 	/**
-	 * Rendert die Testseite mit einer Tabelle aller Mock-Geräte inkl. Validierung.
+	 * Schnellsuche: ein Freitextfeld für Kundenanfragen („Stromquelle
+	 * 0-30V 1kA 30kW“). Die Auswertung läuft komplett im Browser
+	 * (assets/js/eps-quick-search.js + admin-quick-search.js), ohne
+	 * Seitenneuladen und ohne KI. „In Filter übernehmen“ setzt Gerätetyp und
+	 * Spannungs-/Strom-/Leistungsregler (+20-%-Regel) und lädt die Seite mit
+	 * diesen Filtern – bereits gesetzte Filter werden dabei nur auf
+	 * ausdrücklichen Klick ersetzt.
+	 */
+	private function render_quick_search_section() {
+		$stand = function_exists( 'eps_get_shop_devices_stand' ) ? eps_get_shop_devices_stand() : '';
+		$count = function_exists( 'eps_get_shop_devices' ) ? count( eps_get_shop_devices() ) : 0;
+		?>
+		<div class="eps-quick-search" id="eps-quick-search-box">
+			<h2><?php esc_html_e( 'Schnellsuche: Kundenanfrage eingeben', 'eps-produktkonfigurator' ); ?></h2>
+			<p class="description">
+				<?php
+				printf(
+					/* translators: 1: Anzahl Geräte, 2: Datum der Shopdaten */
+					esc_html__( '%1$d Geräte aus dem EPS-Onlineshop (Stand %2$s). Spannung, Strom und Leistung mit Einheit eingeben, z. B. „Stromquelle 0-30V 1kA 30kW“, „E-Last 500V 100A“, „230VAC 3kVA“.', 'eps-produktkonfigurator' ),
+					(int) $count,
+					esc_html( $stand ? date_i18n( 'd.m.Y H:i', strtotime( $stand ) ) : '–' )
+				);
+				?>
+			</p>
+			<p>
+				<input type="search" id="eps-qs-input" class="regular-text eps-qs-input" autocomplete="off"
+					placeholder="<?php esc_attr_e( 'z. B. Stromquelle 0-30V 1kA 30kW', 'eps-produktkonfigurator' ); ?>" />
+				<label class="eps-qs-option">
+					<input type="checkbox" id="eps-qs-internal" checked="checked" />
+					<?php esc_html_e( 'Interne Ansicht (knapp darunter, Hinweise, Parallel-Anzahl)', 'eps-produktkonfigurator' ); ?>
+				</label>
+				<button type="button" class="button" id="eps-qs-apply" disabled="disabled">
+					<?php esc_html_e( 'In Filter übernehmen', 'eps-produktkonfigurator' ); ?>
+				</button>
+			</p>
+			<p id="eps-qs-recognized" class="eps-qs-recognized"></p>
+			<table class="widefat striped eps-qs-results" id="eps-qs-results" hidden="hidden">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Bewertung', 'eps-produktkonfigurator' ); ?></th>
+						<th><?php esc_html_e( 'SKU', 'eps-produktkonfigurator' ); ?></th>
+						<th><?php esc_html_e( 'Name', 'eps-produktkonfigurator' ); ?></th>
+						<th><?php esc_html_e( 'Gerätetyp', 'eps-produktkonfigurator' ); ?></th>
+						<th><?php esc_html_e( 'Spannung', 'eps-produktkonfigurator' ); ?></th>
+						<th><?php esc_html_e( 'Strom', 'eps-produktkonfigurator' ); ?></th>
+						<th><?php esc_html_e( 'Leistung', 'eps-produktkonfigurator' ); ?></th>
+						<th><?php esc_html_e( 'Reserve', 'eps-produktkonfigurator' ); ?></th>
+						<th><?php esc_html_e( 'Hinweis', 'eps-produktkonfigurator' ); ?></th>
+						<th><?php esc_html_e( 'Datenblatt', 'eps-produktkonfigurator' ); ?></th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+			<p id="eps-qs-more" class="description"></p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Rendert die Testseite mit Schnellsuche und einer Tabelle aller Geräte inkl. Validierung.
 	 */
 	public function render_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -527,7 +618,7 @@ class EPS_Admin_Test_Page {
 
 		$options_catalog = function_exists( 'eps_get_options_catalog' ) ? eps_get_options_catalog() : array();
 
-		$all_devices = function_exists( 'eps_get_mock_devices' ) ? eps_get_mock_devices() : array();
+		$all_devices = function_exists( 'eps_get_devices' ) ? eps_get_devices() : array();
 
 		// Alle vorkommenden application_tags einsammeln (für das Dropdown).
 		$all_tags = array();
@@ -723,7 +814,7 @@ class EPS_Admin_Test_Page {
 		}
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Konfigurator Test – Mock-Geräte', 'eps-produktkonfigurator' ); ?></h1>
+			<h1><?php esc_html_e( 'Konfigurator Test – Geräte aus dem Onlineshop', 'eps-produktkonfigurator' ); ?></h1>
 			<p>
 				<em>
 					<?php
@@ -737,6 +828,8 @@ class EPS_Admin_Test_Page {
 					<?php esc_html_e( 'Filter zurücksetzen', 'eps-produktkonfigurator' ); ?>
 				</a>
 			</p>
+
+			<?php $this->render_quick_search_section(); ?>
 
 			<h2><?php esc_html_e( 'Modus 1: Webcode/SKU-Direktsuche', 'eps-produktkonfigurator' ); ?></h2>
 			<form method="get">
