@@ -24,7 +24,7 @@ ZIEL = Path(__file__).resolve().parents[1] / "eps-produktkonfigurator" / "data" 
 
 STANDARD = {"serie": "", "geraetetyp": "", "bidirektional": False, "spannung": "", "strom": "", "leistung": "", "bauart": "",
             "umin": None, "umax": None, "imax": None, "pmax": None, "ac": False, "u_fest": [], "u_bereiche": [],
-            "aus_name": "", "parallel": False, "parallel_max": None, "reihe": False, "shop_url": "", "pdf_url": "",
+            "aus_name": "", "parallel": False, "parallel_max": None, "reihe": False, "shop_url": "", "seite_url": "", "pdf_url": "",
             "f_fest": [], "f_bereiche": [], "f_option": [], "wasser": "", "rueckspeisung": False}
 WASSER = re.compile(r"-WC\b|\bWC\b|wassergekühlt|wasserkühlung|water.?cooled", re.I)
 
@@ -85,7 +85,7 @@ def umwandeln(g: dict, datenformat: int = 2) -> dict:
             "water": g["wasser"],                  # "ja" | "option" | ""
             "texts": {"voltage": g["spannung"], "current": g["strom"], "power": g["leistung"], "form": g["bauart"]},
             "pdf_url": g["pdf_url"],
-            "shop_url": g["shop_url"],
+            "shop_url": g["seite_url"] or g["shop_url"],   # direkt zur Gerätezeile, sonst Serienseite
         },
     }
 
