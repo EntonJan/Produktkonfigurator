@@ -49,7 +49,14 @@ gleiche Obergrenze wie die Filter), larger, parallel/series (nur wenn laut
 Daten möglich), slightly_below (−10 %, nur intern). Im Kundenmodus
 (`internal: false`) werden parallel/series zu „system“ (auf Anfrage),
 „slightly_below“ entfällt. Leistungsbedarf = angegebene Leistung, nur ohne Angabe U × I (Autoranging); AC-Festspannungen
-müssen ±10 % passen. „In Filter übernehmen“ setzt Gerätetyp + Regler
+müssen ±10 % passen. Zusatzkriterien im Freitext: Bauform (19 Zoll/Rack/HE/U, Desktop, Schrank, Einbau,
+DIN Rail, Tower → `form_factor`), bidirektional, Netzrückspeisung (`mains_regeneration`),
+wassergekühlt (`meta.water` ja/option), Ausgangsfrequenz in Hz (`meta.f_fixed`,
+`f_ranges`, `f_option`). Bekannte Abweichung schließt aus, fehlende Angabe → Hinweis
+`feature_unknown:…`, nur als Option → `feature_option:…`. Gemeinsame Testfälle mit der
+EPS-Produktsuche: `tests/gemeinsame-suchfaelle.json` (in beiden Repos identisch halten;
+Node-Test wandelt die Testgeräte über `tools/shop-import.py --json` um).
+„In Filter übernehmen“ setzt Gerätetyp + Regler
 (Spannung cover = U, Strom/Leistung within [Wunsch, Obergrenze]) nur auf
 ausdrücklichen Klick.
 

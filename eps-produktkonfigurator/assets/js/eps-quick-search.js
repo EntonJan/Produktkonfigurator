@@ -37,6 +37,15 @@
 	var PREFIX = { k: 1e3, K: 1e3, M: 1e6, m: 1e-3 };
 	var AC_OUTPUT = [ 'ac_ac', 'dc_ac' ];
 
+	var FORM_FACTORS = [
+		[ /19\s*(?:"|”|“|''|zoll|inch|-zoll)|(^|[^a-z0-9])rack([^a-z]|$)|einschub|(^|[^a-z0-9])\d\s*he([^a-z]|$)|(^|[^a-z0-9])\du([^a-z]|$)/, 'rack_19' ],
+		[ /tischger|desktop|tischgeh/, 'desktop' ],
+		[ /schrank|cabinet/, 'cabinet' ],
+		[ /einbau|built-?in|chassis/, 'built_in' ],
+		[ /hutschiene|din.?rail/, 'din_rail' ],
+		[ /(^|[^a-z])tower([^a-z]|$)/, 'tower' ]
+	];
+
 	var TOKEN = /(^|[^\w.,])(\d+(?:[.,]\d+)?)\s*(?:(?:-|–|bis|to|\.\.\.?|…)\s*(\d+(?:[.,]\d+)?)\s*)?([kKMm]?)(VA|V|A|W)(AC|DC|ac|dc|rms|eff)?(?![a-zA-Z])/g;
 
 	function num( s ) {
@@ -72,7 +81,8 @@
 	 */
 	function parseQuery( text ) {
 		var q = { text: String( text || '' ), voltage: null, current: null, power: null,
-			deviceType: '', load: false, source: false, output: '' };
+			deviceType: '', load: false, source: false, output: '',
+			formFactor: '', bidirectional: false, regeneration: false, water: false, frequencies: [] };
 		var m;
 		TOKEN.lastIndex = 0;
 		while ( ( m = TOKEN.exec( q.text ) ) !== null ) {
@@ -101,7 +111,7 @@
 					q.deviceType = types[ k ];
 				}
 			} );
-			if ( /lade(gerät|geraet)?([^a-zäöü]|$)|charger/.test( t ) ) {
+			if ( /ladeger(ä|ae)t|(^|[^a-zäöü])lader?([^a-zäöü]|$)|charger/.test( t ) ) {
 				q.deviceType = 'charger';
 			}
 			if ( /wechselrichter|inverter/.test( t ) ) {
@@ -114,7 +124,35 @@
 		if ( /quelle|netzger|netzteil|stromversorgung|source|power supply/.test( t ) ) {
 			q.source = true;
 		}
+		parseFeatures( q, t );
 		return q;
+	}
+
+	/** Zusatzkriterien: Bauform, bidirektional, Netzrückspeisung, Wasserkühlung, Ausgangsfrequenz. */
+	function parseFeatures( q, t ) {
+		for ( var f = 0; f < FORM_FACTORS.length; f++ ) {
+			if ( FORM_FACTORS[ f ][ 0 ].test( t ) ) {
+				q.formFactor = FORM_FACTORS[ f ][ 1 ];
+				break;
+			}
+		}
+		q.bidirectional = /bi-?direktional|bidirectional/.test( t );
+		q.regeneration = /rückspeis|ruckspeis|regenerativ|regenerative|energy recovery/.test( t );
+		q.water = /wassergek(ü|ue)hlt|wasserk(ü|ue)hlung|water.?cool|(^|[^a-z])wc([^a-z]|$)/.test( t );
+		var hz = /(\d+(?:[.,]\d+)?)\s*hz(?![a-z])/g;
+		var m;
+		while ( ( m = hz.exec( t ) ) !== null ) {
+			var v = num( m[ 1 ] );
+			if ( q.frequencies.indexOf( v ) === -1 ) {
+				q.frequencies.push( v );
+			}
+		}
+		q.frequencies.sort( function ( a, b ) {
+			return a - b;
+		} );
+		if ( q.frequencies.length && ! q.output && ! q.deviceType ) {
+			q.output = 'AC'; // eine Ausgangsfrequenz gibt es nur bei AC-Ausgängen
+		}
 	}
 
 	/**
@@ -200,6 +238,56 @@
 	// ------------------------------------------------------------------ Bewertung
 
 	/**
+	 * Zusatzkriterien prüfen. null = passt nicht; sonst Liste von Hinweisen
+	 * (feature_unknown:… = in den Daten nicht angegeben, feature_option:… = nur als Option).
+	 */
+	function featureNotes( d, q ) {
+		var notes = [];
+		var m = meta( d );
+		if ( q.formFactor ) {
+			var ff = attr( d, 'form_factor' );
+			if ( ! ff ) {
+				notes.push( 'feature_unknown:form_factor' );
+			} else if ( ff !== q.formFactor ) {
+				return null;
+			}
+		}
+		if ( q.bidirectional && attr( d, 'bidirectional' ) !== true ) {
+			return null;
+		}
+		if ( q.regeneration && attr( d, 'mains_regeneration' ) !== true ) {
+			return null;
+		}
+		if ( q.water ) {
+			if ( m.water === 'option' ) {
+				notes.push( 'feature_option:water' );
+			} else if ( m.water !== 'ja' ) {
+				return null;
+			}
+		}
+		var fixed = m.f_fixed || [];
+		var ranges = m.f_ranges || [];
+		var option = m.f_option || [];
+		for ( var k = 0; k < q.frequencies.length; k++ ) {
+			var f = q.frequencies[ k ];
+			var inRange = ranges.some( function ( r ) {
+				return r[ 0 ] <= f && f <= r[ 1 ];
+			} );
+			if ( fixed.indexOf( f ) !== -1 || inRange ) {
+				continue;
+			}
+			if ( option.indexOf( f ) !== -1 ) {
+				notes.push( 'feature_option:frequency:' + f );
+			} else if ( ! ( fixed.length || ranges.length || option.length ) ) {
+				notes.push( 'feature_unknown:frequency' );
+			} else {
+				return null;
+			}
+		}
+		return notes;
+	}
+
+	/**
 	 * Bewertet ein Gerät. null = passt nicht.
 	 *
 	 * @param {Object} d   Gerät
@@ -210,6 +298,10 @@
 	function evaluate( d, q, opts ) {
 		opts = opts || {};
 		if ( d.is_valid === false || isEmpty( q ) || ! typeMatches( d, q ) ) {
+			return null;
+		}
+		var features = featureNotes( d, q );
+		if ( features === null ) {
 			return null;
 		}
 		var v = deviceValues( d );
@@ -244,7 +336,7 @@
 			if ( fp !== null ) {
 				reserve.P = fp * units;
 			}
-			var notes = [];
+			var notes = features.slice();
 			if ( note ) {
 				notes.push( note );
 			}

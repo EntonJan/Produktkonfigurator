@@ -6,6 +6,7 @@ Eingabe:  shopdaten.json der EPS-Produktsuche (liest www.eps-germany.de/shop aus
 Ausgabe:  eps-produktkonfigurator/data/shop-devices.json (wird vom Plugin über eps_get_shop_devices() geladen).
 
 Aufruf:   python tools/shop-import.py <pfad-zu-shopdaten.json>
+          python tools/shop-import.py --json <datei>   (nur umwandeln und als JSON ausgeben – für die Node-Tests)
 
 Später ersetzt die Weclapp-Anbindung diese Quelle – das Ausgabeformat (EPS_Device-Felder + attributes + meta) bleibt.
 """
@@ -21,6 +22,13 @@ BAUFORM = {"19 Zoll": "rack_19", "Schrank/Cabinet": "cabinet", "Einbau/Built-in"
 ZIEL = Path(__file__).resolve().parents[1] / "eps-produktkonfigurator" / "data" / "shop-devices.json"
 
 
+STANDARD = {"serie": "", "geraetetyp": "", "bidirektional": False, "spannung": "", "strom": "", "leistung": "", "bauart": "",
+            "umin": None, "umax": None, "imax": None, "pmax": None, "ac": False, "u_fest": [], "u_bereiche": [],
+            "aus_name": "", "parallel": False, "parallel_max": None, "reihe": False, "shop_url": "", "pdf_url": "",
+            "f_fest": [], "f_bereiche": [], "f_option": [], "wasser": "", "rueckspeisung": False}
+WASSER = re.compile(r"-WC\b|\bWC\b|wassergekühlt|wasserkühlung|water.?cooled", re.I)
+
+
 def kanaele(g: dict) -> int:
     """Wie viele Ausgänge/Phasen teilen sich die Leistung (für die Plausibilitätsprüfung P ≤ U × I × Kanäle)."""
     m = re.search(r"(\d)\s*x\b", g["strom"]) or re.search(r"(\d)x\d", g["name"])
@@ -33,7 +41,10 @@ def kanaele(g: dict) -> int:
     return 1
 
 
-def umwandeln(g: dict) -> dict:
+def umwandeln(g: dict, datenformat: int = 2) -> dict:
+    g = {**STANDARD, **g}
+    if datenformat < 2 and not g["wasser"] and WASSER.search(g["name"] + " " + g["serie"]):
+        g["wasser"] = "ja"                         # alte Shopdaten: Wasserkühlung nur aus dem Namen
     attr = {}
     if g["umax"] is not None:
         attr["output_voltage"] = [g["umin"] if g["umin"] is not None else g["umax"], g["umax"]]
@@ -44,7 +55,8 @@ def umwandeln(g: dict) -> dict:
     if g["bauart"] in BAUFORM:
         attr["form_factor"] = BAUFORM[g["bauart"]]
     attr["bidirectional"] = bool(g["bidirektional"])
-    attr["mains_regeneration"] = bool(re.search(r"netzrückspeisung|rückspeisend|regenerativ", g["name"] + " " + g["serie"], re.I))
+    attr["mains_regeneration"] = bool(g["rueckspeisung"]) or bool(
+        re.search(r"netzrückspeisung|rückspeis|regenerativ", g["name"] + " " + g["serie"], re.I))
     return {
         "sku": g["bestellnummer"],
         "name_de": g["name"],
@@ -67,6 +79,10 @@ def umwandeln(g: dict) -> dict:
             "parallel_max": g["parallel_max"],
             "series": bool(g["reihe"]),
             "derived_from_name": g["aus_name"],
+            "f_fixed": g["f_fest"],                # Ausgangsfrequenz Hz (Standard), z. B. [50, 60]
+            "f_ranges": g["f_bereiche"],           # einstellbar, z. B. [[15, 1000]]
+            "f_option": g["f_option"],             # als Option lieferbar
+            "water": g["wasser"],                  # "ja" | "option" | ""
             "texts": {"voltage": g["spannung"], "current": g["strom"], "power": g["leistung"], "form": g["bauart"]},
             "pdf_url": g["pdf_url"],
             "shop_url": g["shop_url"],
@@ -74,9 +90,14 @@ def umwandeln(g: dict) -> dict:
     }
 
 
+def umwandeln_datei(d: dict) -> list[dict]:
+    fmt = d.get("format", 1)
+    return [umwandeln(g, fmt) for g in d["geraete"] if g.get("geraetetyp") in GERAETETYP]
+
+
 def main(quelle: str) -> None:
     d = json.loads(Path(quelle).read_text(encoding="utf-8"))
-    geraete = [umwandeln(g) for g in d["geraete"] if g["geraetetyp"] in GERAETETYP]
+    geraete = umwandeln_datei(d)
     ZIEL.parent.mkdir(parents=True, exist_ok=True)
     kopf = json.dumps({"source": d.get("quelle", ""), "stand": d.get("stand", ""), "count": len(geraete)}, ensure_ascii=False)
     zeilen = ",\n".join(json.dumps(g, ensure_ascii=False, separators=(",", ":")) for g in geraete)
@@ -85,6 +106,10 @@ def main(quelle: str) -> None:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 3 and sys.argv[1] == "--json":
+        sys.stdout.reconfigure(encoding="utf-8")
+        print(json.dumps(umwandeln_datei(json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))), ensure_ascii=False))
+        sys.exit(0)
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     main(sys.argv[1])

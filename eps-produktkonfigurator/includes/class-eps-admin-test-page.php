@@ -114,7 +114,14 @@ class EPS_Admin_Test_Page {
 				'type'       => $filter_def['type'],
 				'match'      => isset( $filter_def['match'] ) ? $filter_def['match'] : null,
 				'applies_to' => isset( $filter_def['applies_to'] ) ? array_values( $filter_def['applies_to'] ) : array(),
+				'label_de'   => isset( $filter_def['label_de'] ) ? $filter_def['label_de'] : $key,
+				'options'    => array(),
 			);
+			if ( ! empty( $filter_def['options'] ) ) {
+				foreach ( $filter_def['options'] as $option_key => $option ) {
+					$filters_config_js[ $key ]['options'][ $option_key ] = isset( $option['label_de'] ) ? $option['label_de'] : $option_key;
+				}
+			}
 		}
 
 		// Geräte-Rohdaten für die live im Browser berechneten Faceted-Search-

@@ -41,6 +41,25 @@
 		} ).join( ' · ' );
 	}
 
+	/** Bezeichnung eines Registry-Filters bzw. einer Option (window.epsFiltersConfig, aus filters-config.php). */
+	function registryLabel( key, option ) {
+		var def = ( window.epsFiltersConfig || {} )[ key ] || {};
+		if ( option !== undefined ) {
+			return ( def.options || {} )[ option ] || option;
+		}
+		return def.label_de || key;
+	}
+
+	function featureText( parts, option ) {
+		if ( parts[ 1 ] === 'water' ) {
+			return option ? 'Wasserkühlung als Option' : 'Kühlung nicht angegeben';
+		}
+		if ( parts[ 1 ] === 'frequency' ) {
+			return option ? parts[ 2 ] + ' Hz als Option' : 'Ausgangsfrequenz nicht angegeben – prüfen';
+		}
+		return registryLabel( parts[ 1 ] ) + ( option ? ' als Option' : ' nicht angegeben' );
+	}
+
 	function noteText( r ) {
 		return r.notes.map( function ( n ) {
 			var parts = n.split( ':' );
@@ -56,6 +75,10 @@
 					return keys.join( ', ' ) + ' etwas zu klein';
 				case 'parallel_max':
 					return 'Parallelschaltung bis ' + parts[ 1 ] + ' Geräte';
+				case 'feature_unknown':
+					return featureText( parts, false );
+				case 'feature_option':
+					return featureText( parts, true );
 				default:
 					return n;
 			}
@@ -83,6 +106,23 @@
 		}
 		if ( q.output && ! q.deviceType ) {
 			parts.push( q.output + '-Ausgang' );
+		}
+		if ( q.formFactor ) {
+			parts.push( registryLabel( 'form_factor', q.formFactor ) );
+		}
+		if ( q.bidirectional ) {
+			parts.push( registryLabel( 'bidirectional' ) );
+		}
+		if ( q.regeneration ) {
+			parts.push( registryLabel( 'mains_regeneration' ) );
+		}
+		if ( q.water ) {
+			parts.push( 'wassergekühlt' );
+		}
+		if ( q.frequencies && q.frequencies.length ) {
+			parts.push( q.frequencies.map( function ( f ) {
+				return fmt( f, 'Hz' );
+			} ).join( ' / ' ) );
 		}
 		return parts.length ? 'Erkannt: ' + parts.join( ' · ' ) : '';
 	}
