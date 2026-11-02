@@ -60,6 +60,15 @@ Node-Test wandelt die Testgeräte über `tools/shop-import.py --json` um).
 (Spannung cover = U, Strom/Leistung within [Wunsch, Obergrenze]) nur auf
 ausdrücklichen Klick.
 
+## Anfragen (EPS-Anfrage, Format 1)
+Anfragekorb, Anfragefeld der Homepage und später der Shop erzeugen dieselbe Struktur
+(`includes/class-eps-anfrage.php`): Mail an das Anfrage-Postfach mit Textblock
+`--- EPS-Anfrage --- … --- Ende ---` im Mailtext und Anhang `EPS-Anfrage.json`. Die EPS-Produktsuche
+liest beides (`anfrage_format.py`). Beschreibung, JSON Schema und Beispiele: `tests/eps-anfrage/`
+(in beiden Repos identisch halten). Test: `php tests/eps-anfrage.test.php` – der Textblock muss Zeichen
+für Zeichen der `.txt`-Datei entsprechen. Vorschau zum Ausprobieren: Admin „Konfigurator Test“ →
+„Anfrage-Vorschau“ (versendet nur auf Klick, Empfänger über Option/Filter `eps_anfrage_empfaenger`).
+
 ## Optionen-Katalog
 Zentraler Katalog mit durchgehenden Nummern 1 bis 12
 (`eps_get_options_catalog()`). Jedes Gerät führt nur die für es tatsächlich

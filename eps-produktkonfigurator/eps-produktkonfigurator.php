@@ -91,11 +91,14 @@ function eps_produktkonfigurator_init() {
 	require_once EPS_PRODUKTKONFIGURATOR_PLUGIN_DIR . 'includes/class-eps-filter.php';
 	require_once EPS_PRODUKTKONFIGURATOR_PLUGIN_DIR . 'includes/mock-devices.php';
 	require_once EPS_PRODUKTKONFIGURATOR_PLUGIN_DIR . 'includes/shop-devices.php';
+	require_once EPS_PRODUKTKONFIGURATOR_PLUGIN_DIR . 'includes/class-eps-anfrage.php';
 
 	// TEMPORÄR: Admin-Testseite zur Überprüfung der Mock-Geräte, wird später entfernt.
 	if ( is_admin() ) {
 		require_once EPS_PRODUKTKONFIGURATOR_PLUGIN_DIR . 'includes/class-eps-admin-test-page.php';
 		new EPS_Admin_Test_Page();
+		require_once EPS_PRODUKTKONFIGURATOR_PLUGIN_DIR . 'includes/class-eps-admin-anfrage-page.php';
+		new EPS_Admin_Anfrage_Page();
 	}
 }
 add_action( 'plugins_loaded', 'eps_produktkonfigurator_init' );
