@@ -85,4 +85,7 @@ Alle Bezeichnungen (Filter, Optionen, Gerätetypen) existieren als
 und das Ergebnis berichten. Testdaten bleiben klar als Testdaten
 erkennbar (z. B. Testoptionen, offensichtlich ungültige Geräte). Shopdaten
 aktualisieren: EPS-Produktsuche starten („Shop neu einlesen“), dann
-`python tools/shop-import.py <…/EPS-Produktsuche-Daten/shopdaten.json>`.
+`python tools/shop-import.py <…/EPS-Produktsuche-Daten/shopdaten.json>`. Seit 02.11.2026 gilt bei Abweichungen der
+SelectLine-Artikelexport (aktueller als der Shop): Die Produktsuche gleicht beim Laden mit
+`EPS-Produktsuche-Daten/selectline-artikel.csv` ab (`selectline.py`); für den Konfigurator die abgeglichenen Daten
+importieren (nur Shopgeräte, keine SelectLine-Artikel ohne Shopseite).

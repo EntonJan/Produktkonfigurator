@@ -28,7 +28,7 @@ const skus = ( r ) => r.map( ( x ) => x.device.sku );
 test( 'Shopdaten vollständig geladen', () => {
 	assert.ok( data.count >= 700, 'mindestens 700 Geräte erwartet' );
 	assert.equal( devices.length, data.count );
-	assert.equal( devices.filter( ( d ) => ! d.is_valid ).length, 7 ); // bekannte Datenfehler im Shop
+	assert.equal( devices.filter( ( d ) => ! d.is_valid ).length, 8 ); // bekannte Datenfehler (Shop/SelectLine, u. a. 200962: 240000 W statt 24000 W)
 } );
 
 test( 'Anfrage lesen', () => {
