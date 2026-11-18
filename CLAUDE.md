@@ -79,7 +79,7 @@ Weclapp = `80` + Kategorie-Ziffer (2 AC-DC, 3 E-Lasten, 4 AC-AC, 5 DC-DC, 6 DC-A
 (`option_numbers`; in Weclapp das Textfeld `eps_optionen`, z. B. „1, 3, 8“). Die Options-Suche ist ein Textfeld mit
 UND-Verknüpfung mehrerer Nummern, exaktem Zahlenvergleich; eine Nummer außerhalb des Katalogs ergibt einen Hinweis
 und 0 Treffer. Schnittstellen sind teils gruppiert (Option 8 = USB/RS232/RS485/CAN/CANopen/Profibus/Modbus-TCP,
-Option 12 = Profinet/EtherCAT/DeviceNet); Filter auf einzelne Schnittstellen laufen nicht über die Optionsnummer.
+Option 12 = Profinet/EtherCAT/DeviceNet); Entscheidung 18.11.2026: Schnittstellen werden im Konfigurator über die Optionsnummern gefiltert (Optionssuche), nicht über eigene Felder pro Schnittstelle; ein Filter „CAN“ trifft damit alle Geräte mit Option 8.
 
 ## Zweisprachigkeit
 Alle Bezeichnungen (Filter, Optionen, Gerätetypen) existieren als
