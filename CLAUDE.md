@@ -70,11 +70,16 @@ für Zeichen der `.txt`-Datei entsprechen. Vorschau zum Ausprobieren: Admin „K
 „Anfrage-Vorschau“ (versendet nur auf Klick, Empfänger über Option/Filter `eps_anfrage_empfaenger`).
 
 ## Optionen-Katalog
-Zentraler Katalog mit durchgehenden Nummern 1 bis 12
-(`eps_get_options_catalog()`). Jedes Gerät führt nur die für es tatsächlich
-verfügbaren Nummern als Teilmenge. Die Options-Suche ist ein Textfeld mit
-UND-Verknüpfung mehrerer Nummern, exaktem Zahlenvergleich; eine Nummer
-außerhalb des Katalogs ergibt einen Hinweis und 0 Treffer.
+Zentraler Katalog (`eps_get_options_catalog()`, `includes/options-catalog.php`) mit den echten EPS-Optionen:
+68 Optionen, lückenlos nummeriert 1 bis 68 (Quelle: `Optionskatalog-800000er_ab-2018.xlsx`, Chef-Freigabe 12.11.2026,
+Stand nach Umbau 16.11.2026; Zubehör ist darin aufgegangen, es gibt keine 5xx-Nummern mehr). Artikelnummer in
+Weclapp = `80` + Kategorie-Ziffer (2 AC-DC, 3 E-Lasten, 4 AC-AC, 5 DC-DC, 6 DC-AC, 7 Lade/USV) + Optionsnummer
+3-stellig, z. B. 802001; `articles` führt sie je Gerätetyp nur dort, wo die Option vorkommt. Englische Namen sind
+Übersetzungsvorschläge. Jedes Gerät führt nur die für es tatsächlich verfügbaren Nummern als Teilmenge
+(`option_numbers`; in Weclapp das Textfeld `eps_optionen`, z. B. „1, 3, 8“). Die Options-Suche ist ein Textfeld mit
+UND-Verknüpfung mehrerer Nummern, exaktem Zahlenvergleich; eine Nummer außerhalb des Katalogs ergibt einen Hinweis
+und 0 Treffer. Schnittstellen sind teils gruppiert (Option 8 = USB/RS232/RS485/CAN/CANopen/Profibus/Modbus-TCP,
+Option 12 = Profinet/EtherCAT/DeviceNet); Filter auf einzelne Schnittstellen laufen nicht über die Optionsnummer.
 
 ## Zweisprachigkeit
 Alle Bezeichnungen (Filter, Optionen, Gerätetypen) existieren als
